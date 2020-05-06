@@ -1,0 +1,5 @@
+#!/bin/sh
+
+export RAILS_ENV=test
+
+bundle exec rspec $@
