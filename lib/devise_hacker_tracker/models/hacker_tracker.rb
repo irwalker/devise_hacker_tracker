@@ -5,22 +5,28 @@ module HackerTracker
     SignInFailure.clear_outdated!
 
     failures = SignInFailure.recent.where(ip_address: ip_address)
-    too_many_attempts?(failures) && too_many_accounts_tried?(failures)
+    Tracker.new.hacker?(failures)
   end
 
-  private
+  class Tracker
+    def hacker?(failures)
+      too_many_attempts?(failures) && too_many_accounts_tried?(failures)
+    end
 
-  def self.too_many_attempts?(failures)
-    failures.size >= Devise.maximum_attempts_per_ip
-  end
+    private
 
-  def self.too_many_accounts_tried?(failures)
-    distinct_accounts_tried(failures) >= Devise.maximum_accounts_attempted
-  end
+    def too_many_attempts?(failures)
+      failures.size >= Devise.maximum_attempts_per_ip
+    end
 
-  def self.distinct_accounts_tried(failures)
-    Devise.authentication_keys.map do |method|
-      failures.distinct.pluck(method).count
-    end.max
+    def too_many_accounts_tried?(failures)
+      distinct_accounts_tried(failures) >= Devise.maximum_accounts_attempted
+    end
+
+    def distinct_accounts_tried(failures)
+      Devise.authentication_keys.map do |method|
+        failures.distinct.pluck(method).count
+      end.max
+    end
   end
 end
